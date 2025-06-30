@@ -1,0 +1,9 @@
+com\example\internetbanking\model\Client.class
+com\example\internetbanking\model\Card.class
+com\example\internetbanking\model\TestLombok.class
+com\example\internetbanking\repository\CardRepository.class
+com\example\internetbanking\service\BankingService.class
+com\example\internetbanking\controller\BankingController.class
+com\example\internetbanking\repository\ClientRepository.class
+com\example\internetbanking\dto\TransferRequest.class
+com\example\internetbanking\InternetBankingApplication.class
