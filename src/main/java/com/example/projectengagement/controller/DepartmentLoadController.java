@@ -1,0 +1,51 @@
+package com.example.projectengagement.controller;
+
+import com.example.projectengagement.dto.EmployeeProjectLoadDto;
+import com.example.projectengagement.entity.Participation;
+import com.example.projectengagement.repository.ParticipationRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Optional;
+
+@RestController
+@RequestMapping("/api/department-load")
+@RequiredArgsConstructor
+public class DepartmentLoadController {
+
+    private final ParticipationRepository participationRepository;
+
+    @GetMapping
+    public List<EmployeeProjectLoadDto> getDepartmentLoad(
+            @RequestParam("date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @RequestParam("department") String departmentName
+    ) {
+        return participationRepository.findAll().stream()
+                .filter(p -> {
+                    var user = p.getUser();
+                    var dept = user.getDepartment();
+                    return dept != null &&
+                            dept.getName().equalsIgnoreCase(departmentName) &&
+                            isActiveOnDate(p.getStartDate(), p.getEndDate(), date);
+                })
+                .map(p -> {
+                    var user = p.getUser();
+                    String fullName = user.getLastName() + " " + user.getFirstName() +
+                            (user.getMiddleName() != null ? " " + user.getMiddleName() : "");
+
+                    String projectName = p.getProject() != null ? p.getProject().getName() : "—";
+                    double load = Optional.ofNullable(p.getParticipationPercentage()).orElse(0.0);
+
+                    return new EmployeeProjectLoadDto(departmentName, fullName, projectName, load);
+                })
+                .toList();
+    }
+
+    private boolean isActiveOnDate(LocalDate start, LocalDate end, LocalDate target) {
+        return (start == null || !start.isAfter(target)) &&
+                (end == null || !end.isBefore(target));
+    }
+}
