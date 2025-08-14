@@ -1,14 +1,19 @@
 package com.example.projectengagement.dto;
 
 import jakarta.validation.Valid;
-import lombok.*;
 import jakarta.validation.constraints.*;
+import lombok.*;
+
+import java.time.LocalDate;
 import java.util.List;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 public class StatisticsDto {
+
+    @NotNull(message = "Date must not be null")
+    private LocalDate date;
 
     @Min(value = 0, message = "Employee count must be zero or positive")
     private long employeeCount;
@@ -23,4 +28,5 @@ public class StatisticsDto {
     @Size(min = 1, message = "Active projects list must contain at least one project")
     private List<@Valid ProjectStatsDto> activeProjects;
 }
+
 

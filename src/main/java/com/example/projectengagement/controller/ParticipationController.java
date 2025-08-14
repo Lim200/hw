@@ -16,6 +16,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
+import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/participations")
@@ -25,6 +27,7 @@ public class ParticipationController {
 
     private final ParticipationService participationService;
 
+    // ✅ CREATE: через DTO
     @PostMapping
     @Operation(
             summary = "Create a new participation",
@@ -49,5 +52,35 @@ public class ParticipationController {
         Participation saved = participationService.create(dto);
         URI uri = uriBuilder.path("/api/participations/{id}").buildAndExpand(saved.getId()).toUri();
         return ResponseEntity.created(uri).body(saved);
+    }
+
+    @GetMapping
+    @Operation(summary = "Get all participations")
+    public List<Participation> findAll() {
+        return participationService.findAll();
+    }
+
+    @GetMapping("/{id}")
+    @Operation(summary = "Get participation by ID")
+    public ResponseEntity<Participation> findById(@PathVariable Long id) {
+        Optional<Participation> result = participationService.findById(id);
+        return result.map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
+    }
+
+    @PutMapping("/{id}")
+    @Operation(summary = "Update participation")
+    public ResponseEntity<Participation> update(
+            @PathVariable Long id,
+            @Valid @RequestBody Participation updated
+    ) {
+        Participation saved = participationService.update(id, updated);
+        return ResponseEntity.ok(saved);
+    }
+
+    @DeleteMapping("/{id}")
+    @Operation(summary = "Delete participation")
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        participationService.delete(id);
+        return ResponseEntity.noContent().build();
     }
 }

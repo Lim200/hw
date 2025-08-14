@@ -7,4 +7,9 @@ import java.util.List;
 
 public interface UserStatisticsService {
     List<UserProjectStatsDto> getUserStats(LocalDate date, String fullName);
+    UserProjectStatsDto create(UserProjectStatsDto dto);
+    List<UserProjectStatsDto> findAll();
+    UserProjectStatsDto update(String fullName, UserProjectStatsDto dto);
+    void delete(String fullName);
+    ;
 }

@@ -13,9 +13,13 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+import java.util.Optional;
+
 @Service
 @RequiredArgsConstructor
 public class ParticipationServiceImpl implements ParticipationService {
+
     private final ParticipationRepository participationRepository;
     private final UserRepository userRepository;
     private final ProjectRepository projectRepository;
@@ -43,5 +47,42 @@ public class ParticipationServiceImpl implements ParticipationService {
                 .build();
 
         return participationRepository.save(p);
+    }
+
+    @Override
+    public List<Participation> findAll() {
+        return participationRepository.findAll();
+    }
+
+    @Override
+    public Optional<Participation> findById(Long id) {
+        return participationRepository.findById(id);
+    }
+
+    @Transactional
+    @Override
+    public Participation update(Long id, Participation updated) {
+        Participation existing = participationRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Participation not found: " + id));
+
+        existing.setRole(updated.getRole());
+        existing.setParticipationPercentage(updated.getParticipationPercentage());
+        existing.setStartDate(updated.getStartDate());
+        existing.setEndDate(updated.getEndDate());
+
+        // Обновление user и project — по желанию, если разрешено
+        existing.setUser(updated.getUser());
+        existing.setProject(updated.getProject());
+
+        return participationRepository.save(existing);
+    }
+
+    @Transactional
+    @Override
+    public void delete(Long id) {
+        if (!participationRepository.existsById(id)) {
+            throw new ResourceNotFoundException("Participation not found: " + id);
+        }
+        participationRepository.deleteById(id);
     }
 }

@@ -22,6 +22,9 @@ public class StatisticsServiceImpl implements StatisticsService {
     private final ProjectRepository projectRepository;
     private final ProjectContractorRepository projectContractorRepository;
 
+    // Временное хранилище статистики
+    private final Map<LocalDate, StatisticsDto> statisticsStore = new HashMap<>();
+
     @Override
     public StatisticsDto getStatistics(LocalDate date) {
         long employeeCount = participationRepository.findAll().stream()
@@ -57,7 +60,35 @@ public class StatisticsServiceImpl implements StatisticsService {
                 .map(entry -> new ProjectStatsDto(entry.getKey(), entry.getValue()))
                 .toList();
 
-        return new StatisticsDto(employeeCount, activeProjectCount, departmentCount, projectStats);
+        return new StatisticsDto(date, employeeCount, activeProjectCount, departmentCount, projectStats);
+    }
+
+    @Override
+    public StatisticsDto create(StatisticsDto dto) {
+        statisticsStore.put(dto.getDate(), dto);
+        return dto;
+    }
+
+    @Override
+    public List<StatisticsDto> findAll() {
+        return new ArrayList<>(statisticsStore.values());
+    }
+
+    @Override
+    public StatisticsDto update(LocalDate date, StatisticsDto dto) {
+        if (!statisticsStore.containsKey(date)) {
+            throw new NoSuchElementException("Statistics not found for date: " + date);
+        }
+        statisticsStore.put(date, dto);
+        return dto;
+    }
+
+    @Override
+    public void delete(LocalDate date) {
+        if (!statisticsStore.containsKey(date)) {
+            throw new NoSuchElementException("Statistics not found for date: " + date);
+        }
+        statisticsStore.remove(date);
     }
 
     private boolean isActiveOnDate(LocalDate start, LocalDate end, LocalDate target) {

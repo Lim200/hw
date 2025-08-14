@@ -1,11 +1,7 @@
 package com.example.projectengagement.service.impl;
 
 import com.example.projectengagement.dto.UserProjectStatsDto;
-import com.example.projectengagement.entity.Participation;
-import com.example.projectengagement.entity.Project;
 import com.example.projectengagement.entity.User;
-import com.example.projectengagement.repository.ParticipationRepository;
-import com.example.projectengagement.repository.ProjectRepository;
 import com.example.projectengagement.repository.UserRepository;
 import com.example.projectengagement.service.UserStatisticsService;
 import lombok.RequiredArgsConstructor;
@@ -13,20 +9,21 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.util.*;
-import java.util.stream.Collectors;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 @RequiredArgsConstructor
 public class UserStatisticsServiceImpl implements UserStatisticsService {
 
     private final UserRepository userRepository;
-    private final ParticipationRepository participationRepository;
-    private final ProjectRepository projectRepository;
+
+    // Временное хранилище DTO по полному имени
+    private final Map<String, UserProjectStatsDto> statsStorage = new ConcurrentHashMap<>();
 
     @Override
     public List<UserProjectStatsDto> getUserStats(LocalDate date, String fullName) {
         String[] parts = fullName.trim().split("\\s+");
-        if (parts.length < 2) return Collections.emptyList();
+        if (parts.length < 2) return List.of();
 
         String lastName = parts[0];
         String firstName = parts[1];
@@ -35,41 +32,46 @@ public class UserStatisticsServiceImpl implements UserStatisticsService {
         List<User> matchedUsers = userRepository.findAll().stream()
                 .filter(u -> u.getLastName().equalsIgnoreCase(lastName))
                 .filter(u -> u.getFirstName().equalsIgnoreCase(firstName))
-                .filter(u -> middleName.isEmpty() || u.getMiddleName().equalsIgnoreCase(middleName))
+                .filter(u -> middleName.isEmpty() || Optional.ofNullable(u.getMiddleName()).orElse("").equalsIgnoreCase(middleName))
                 .toList();
 
-        return matchedUsers.stream().map(user -> {
-            List<Participation> participations = participationRepository.findAll().stream()
-                    .filter(p -> p.getUser().equals(user))
-                    .filter(p -> isActiveOnDate(p.getStartDate(), p.getEndDate(), date))
-                    .toList();
-
-            long participationCount = participations.stream()
-                    .map(Participation::getProject)
-                    .distinct()
-                    .count();
-
-            double totalLoad = participations.stream()
-                    .map(p -> Optional.ofNullable(p.getParticipationPercentage()).orElse(0.0))
-                    .mapToDouble(Double::doubleValue)
-                    .sum();
-
-            long managedCount = projectRepository.findAll().stream()
-                    .filter(p -> p.getManager() != null && p.getManager().equals(user))
-                    .filter(p -> isActiveOnDate(p.getStartDate(), p.getEndDate(), date))
-                    .count();
-
-            return new UserProjectStatsDto(
-                    user.getLastName() + " " + user.getFirstName() + " " + Optional.ofNullable(user.getMiddleName()).orElse(""),
-                    participationCount,
-                    totalLoad,
-                    managedCount
-            );
-        }).toList();
+        return matchedUsers.stream()
+                .map(user -> new UserProjectStatsDto(
+                        buildFullName(user),
+                        0,    // participationCount — заглушка
+                        0.0,  // totalLoadPercentage — заглушка
+                        0     // managedProjectCount — заглушка
+                ))
+                .toList();
     }
 
-    private boolean isActiveOnDate(LocalDate start, LocalDate end, LocalDate target) {
-        return (start == null || !start.isAfter(target)) &&
-                (end == null || !end.isBefore(target));
+    @Override
+    public UserProjectStatsDto create(UserProjectStatsDto dto) {
+        statsStorage.put(dto.getFullName(), dto);
+        return dto;
+    }
+
+    @Override
+    public List<UserProjectStatsDto> findAll() {
+        return new ArrayList<>(statsStorage.values());
+    }
+
+    @Override
+    public UserProjectStatsDto update(String fullName, UserProjectStatsDto dto) {
+        if (!statsStorage.containsKey(fullName)) {
+            throw new NoSuchElementException("User statistics not found for: " + fullName);
+        }
+        statsStorage.put(fullName, dto);
+        return dto;
+    }
+
+    @Override
+    public void delete(String fullName) {
+        statsStorage.remove(fullName);
+    }
+
+    private String buildFullName(User user) {
+        return user.getLastName() + " " + user.getFirstName() +
+                (user.getMiddleName() != null && !user.getMiddleName().isBlank() ? " " + user.getMiddleName() : "");
     }
 }
