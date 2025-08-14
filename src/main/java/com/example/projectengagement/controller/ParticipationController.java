@@ -7,7 +7,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -26,20 +25,10 @@ public class ParticipationController {
 
     private final ParticipationService participationService;
 
+    @PostMapping
     @Operation(
             summary = "Create a new participation",
             description = "Adds a new participation record for a project and returns it with the assigned ID",
-            requestBody = @RequestBody(
-                    required = true,
-                    description = "New participation data",
-                    content = @Content(
-                            schema = @Schema(implementation = CreateParticipationDto.class),
-                            examples = @ExampleObject(
-                                    name = "Participation example",
-                                    value = "{ \"employeeId\": 1, \"projectId\": 2, \"role\": \"Developer\" }"
-                            )
-                    )
-            ),
             responses = {
                     @ApiResponse(
                             responseCode = "201",
@@ -53,9 +42,8 @@ public class ParticipationController {
                     )
             }
     )
-    @PostMapping
-    public ResponseEntity<Participation> create(
-            @Valid @org.springframework.web.bind.annotation.RequestBody CreateParticipationDto dto,
+    public ResponseEntity<Participation> createParticipation(
+            @Valid @RequestBody CreateParticipationDto dto,
             UriComponentsBuilder uriBuilder
     ) {
         Participation saved = participationService.create(dto);
@@ -63,4 +51,3 @@ public class ParticipationController {
         return ResponseEntity.created(uri).body(saved);
     }
 }
-

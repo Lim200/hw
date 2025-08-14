@@ -1,9 +1,7 @@
 package com.example.projectengagement.controller;
 
 import com.example.projectengagement.dto.EmployeeLoadDto;
-import com.example.projectengagement.entity.Participation;
-import com.example.projectengagement.entity.User;
-import com.example.projectengagement.repository.ParticipationRepository;
+import com.example.projectengagement.service.EmployeeLoadService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -13,8 +11,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/employee-load")
@@ -22,7 +19,7 @@ import java.util.stream.Collectors;
 @Tag(name = "Employee Load", description = "API for retrieving employee workload statistics")
 public class EmployeeLoadController {
 
-    private final ParticipationRepository participationRepository;
+    private final EmployeeLoadService employeeLoadService;
 
     @GetMapping
     @Operation(
@@ -36,35 +33,6 @@ public class EmployeeLoadController {
             @Parameter(description = "Target date for workload calculation", example = "2025-08-09")
             LocalDate date
     ) {
-        List<Participation> activeParticipations = participationRepository.findAll().stream()
-                .filter(p -> isActiveOnDate(p.getStartDate(), p.getEndDate(), date))
-                .toList();
-
-        Map<User, List<Participation>> grouped = activeParticipations.stream()
-                .collect(Collectors.groupingBy(Participation::getUser));
-
-        return grouped.entrySet().stream()
-                .map(entry -> {
-                    User user = entry.getKey();
-                    List<Participation> participations = entry.getValue();
-
-                    double totalLoad = participations.stream()
-                            .map(p -> Optional.ofNullable(p.getParticipationPercentage()).orElse(0.0))
-                            .mapToDouble(Double::doubleValue)
-                            .sum();
-
-                    String fullName = user.getLastName() + " " + user.getFirstName() +
-                            (user.getMiddleName() != null ? " " + user.getMiddleName() : "");
-
-                    String departmentName = user.getDepartment() != null ? user.getDepartment().getName() : "—";
-
-                    return new EmployeeLoadDto(fullName, departmentName, totalLoad);
-                })
-                .toList();
-    }
-
-    private boolean isActiveOnDate(LocalDate start, LocalDate end, LocalDate target) {
-        return (start == null || !start.isAfter(target)) &&
-                (end == null || !end.isBefore(target));
+        return employeeLoadService.getEmployeeLoad(date);
     }
 }

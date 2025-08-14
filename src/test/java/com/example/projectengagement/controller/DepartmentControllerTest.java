@@ -35,7 +35,8 @@ class DepartmentControllerTest {
     void createDepartment() throws Exception {
         CreateDepartmentDto dto = new CreateDepartmentDto("IT", false);
         Department saved = Department.builder().id(10L).name("IT").isContractor(false).build();
-        when(departmentService.create(any())).thenReturn(saved);
+        when(departmentService.create(any(CreateDepartmentDto.class))).thenReturn(saved);
+
 
         mvc.perform(post("/api/departments")
                         .contentType(MediaType.APPLICATION_JSON)

@@ -8,6 +8,7 @@ import com.example.projectengagement.exception.ResourceNotFoundException;
 import com.example.projectengagement.repository.ParticipationRepository;
 import com.example.projectengagement.repository.ProjectRepository;
 import com.example.projectengagement.repository.UserRepository;
+import com.example.projectengagement.service.impl.ParticipationServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -18,19 +19,19 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-class ParticipationServiceTest {
+class ParticipationServiceImplTest {
 
     private ParticipationRepository participationRepository;
     private UserRepository userRepository;
     private ProjectRepository projectRepository;
-    private ParticipationService participationService;
+    private ParticipationServiceImpl participationServiceImpl;
 
     @BeforeEach
     void setUp() {
         participationRepository = mock(ParticipationRepository.class);
         userRepository = mock(UserRepository.class);
         projectRepository = mock(ProjectRepository.class);
-        participationService = new ParticipationService(participationRepository, userRepository, projectRepository);
+        participationServiceImpl = new ParticipationServiceImpl(participationRepository, userRepository, projectRepository);
     }
 
     @Test
@@ -61,7 +62,7 @@ class ParticipationServiceTest {
         when(participationRepository.save(any(Participation.class))).thenReturn(saved);
 
         // when
-        Participation result = participationService.create(dto);
+        Participation result = participationServiceImpl.create(dto);
 
         // then
         ArgumentCaptor<Participation> captor = ArgumentCaptor.forClass(Participation.class);
@@ -83,7 +84,7 @@ class ParticipationServiceTest {
         when(userRepository.findById(1L)).thenReturn(Optional.empty());
 
         // then
-        assertThatThrownBy(() -> participationService.create(dto))
+        assertThatThrownBy(() -> participationServiceImpl.create(dto))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessageContaining("User not found: 1");
 
@@ -100,7 +101,7 @@ class ParticipationServiceTest {
         when(projectRepository.findById(2L)).thenReturn(Optional.empty());
 
         // then
-        assertThatThrownBy(() -> participationService.create(dto))
+        assertThatThrownBy(() -> participationServiceImpl.create(dto))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessageContaining("Project not found: 2");
 
@@ -123,7 +124,7 @@ class ParticipationServiceTest {
         when(projectRepository.findById(2L)).thenReturn(Optional.of(project));
 
         // then
-        assertThatThrownBy(() -> participationService.create(dto))
+        assertThatThrownBy(() -> participationServiceImpl.create(dto))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("startDate cannot be after endDate");
 

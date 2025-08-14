@@ -3,6 +3,7 @@ package com.example.projectengagement.service;
 import com.example.projectengagement.dto.CreateDepartmentDto;
 import com.example.projectengagement.entity.Department;
 import com.example.projectengagement.repository.DepartmentRepository;
+import com.example.projectengagement.service.impl.DepartmentServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -18,7 +19,7 @@ class DepartmentServiceTest {
     @BeforeEach
     void setUp() {
         departmentRepository = mock(DepartmentRepository.class);
-        departmentService = new DepartmentService(departmentRepository);
+        departmentService = new DepartmentServiceImpl(departmentRepository);
     }
 
     @Test
