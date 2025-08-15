@@ -6,6 +6,7 @@ import jakarta.validation.constraints.*;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+@Builder
 public class UserProjectStatsDto {
 
     @NotBlank(message = "Full name must not be blank")

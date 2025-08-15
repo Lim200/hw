@@ -10,6 +10,7 @@ import java.util.List;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+@Builder
 public class StatisticsDto {
 
     @NotNull(message = "Date must not be null")
