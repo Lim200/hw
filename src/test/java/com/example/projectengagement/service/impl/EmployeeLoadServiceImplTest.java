@@ -1,54 +1,57 @@
-package com.example.projectengagement.controller;
+package com.example.projectengagement.service.impl;
 
-import com.example.projectengagement.config.TestSecurityConfig;
 import com.example.projectengagement.dto.EmployeeLoadDto;
-import com.example.projectengagement.exception.GlobalExceptionHandler;
-import com.example.projectengagement.service.EmployeeLoadService;
+import com.example.projectengagement.entity.Department;
+import com.example.projectengagement.entity.Participation;
+import com.example.projectengagement.entity.User;
+import com.example.projectengagement.repository.ParticipationRepository;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.context.annotation.Import;
-import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDate;
 import java.util.List;
 
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.*;
 
-@WebMvcTest(EmployeeLoadController.class)
-@Import({GlobalExceptionHandler.class, TestSecurityConfig.class})
-class EmployeeLoadControllerTest {
-
-    @Autowired
-    MockMvc mvc;
-
-    @MockBean
-    EmployeeLoadService employeeLoadService;
+class EmployeeLoadServiceImplTest {
 
     @Test
-    void getEmployeeLoad_returnsExpectedJson() throws Exception {
-        LocalDate date = LocalDate.of(2025, 8, 10);
+    void getEmployeeLoad_returnsCorrectDto() {
+        // Arrange
+        ParticipationRepository mockRepo = mock(ParticipationRepository.class);
+        EmployeeLoadServiceImpl service = new EmployeeLoadServiceImpl(mockRepo);
 
-        EmployeeLoadDto dto = new EmployeeLoadDto("Ivanov Ivan", "Sales", 75.0);
-        when(employeeLoadService.getEmployeeLoad(date)).thenReturn(List.of(dto));
+        User user = new User();
+        user.setFirstName("Ivan");
+        user.setLastName("Ivanov");
+        user.setMiddleName(null);
 
-        mvc.perform(get("/api/employee-load")
-                        .param("date", "2025-08-10")
-                        .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(1))
-                .andExpect(jsonPath("$[0].fullName").value("Ivanov Ivan"))
-                .andExpect(jsonPath("$[0].departmentName").value("Sales"))
-                .andExpect(jsonPath("$[0].totalLoadPercentage").value(75.0));
-    }
+        Department department = new Department();
+        department.setName("Sales");
+        user.setDepartment(department);
 
-    @Test
-    void getEmployeeLoad_missingDateParam_returnsBadRequest() throws Exception {
-        mvc.perform(get("/api/employee-load"))
-                .andExpect(status().isBadRequest());
+        Participation p1 = new Participation();
+        p1.setUser(user);
+        p1.setStartDate(LocalDate.of(2025, 1, 1));
+        p1.setEndDate(LocalDate.of(2025, 12, 31));
+        p1.setParticipationPercentage(50.0);
+
+        Participation p2 = new Participation();
+        p2.setUser(user);
+        p2.setStartDate(LocalDate.of(2025, 6, 1));
+        p2.setEndDate(LocalDate.of(2025, 8, 31));
+        p2.setParticipationPercentage(25.0);
+
+        when(mockRepo.findAll()).thenReturn(List.of(p1, p2));
+
+        // Act
+        List<EmployeeLoadDto> result = service.getEmployeeLoad(LocalDate.of(2025, 8, 10));
+
+        // Assert
+        assertThat(result).hasSize(1);
+        EmployeeLoadDto dto = result.get(0);
+        assertThat(dto.getFullName()).isEqualTo("Ivanov Ivan");
+        assertThat(dto.getDepartmentName()).isEqualTo("Sales");
+        assertThat(dto.getTotalLoadPercentage()).isEqualTo(75.0);
     }
 }
